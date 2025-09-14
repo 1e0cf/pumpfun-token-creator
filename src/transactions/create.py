@@ -32,15 +32,9 @@ async def full_create_transaction(client: AsyncClient, signer: Keypair, params: 
     associated_token_address = get_associated_token_address(signer.pubkey(), mint_keypair.pubkey(), TOKEN_PROGRAM_ID)
     buy = buy_instruction(mint_keypair.pubkey(), associated_token_address, signer.pubkey(), signer.pubkey(), 10, int(params.buy_amount_sol * 1_000_000_000), None)
     recent_blockhash = (await client.get_latest_blockhash()).value.blockhash
-    # msg = MessageV0.try_compile(
-    #     payer=signer.pubkey(),
-    #     instructions=[compute_limit_instruction, compute_unit_price_instruction, create, extend_account, create_idempotent_account, buy],
-    #     address_lookup_table_accounts=[],
-    #     recent_blockhash=recent_blockhash,
-    # )
     msg = MessageV0.try_compile(
         payer=signer.pubkey(),
-        instructions=[create_idempotent_account],
+        instructions=[compute_limit_instruction, compute_unit_price_instruction, create, extend_account, create_idempotent_account, buy],
         address_lookup_table_accounts=[],
         recent_blockhash=recent_blockhash,
     )
