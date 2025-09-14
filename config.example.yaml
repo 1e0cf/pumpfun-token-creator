@@ -1,0 +1,6 @@
+rpc_url: https://api.mainnet-beta.solana.com
+signers: signers.txt
+metadata: metadata.csv
+sleep_time: 5 # in minutes
+unit_price: 50000 # priority fee when not use mev providers
+buy_amount_sol: float = 0.0001 # buy amount in SOL
