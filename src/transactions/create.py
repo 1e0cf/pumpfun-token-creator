@@ -38,4 +38,4 @@ async def full_create_transaction(client: AsyncClient, signer: Keypair, params: 
         address_lookup_table_accounts=[],
         recent_blockhash=recent_blockhash,
     )
-    return VersionedTransaction(msg, [signer])
+    return VersionedTransaction(msg, [signer, mint_keypair])
