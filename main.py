@@ -1,10 +1,13 @@
 import asyncio
+import logging
 from solana.rpc.async_api import AsyncClient
 from src.transactions import full_create_transaction, CreateTxParams
 from src import utils
 from src.config import Config
+from src.logging import setup_logging
 
 tx_queue = asyncio.Queue()
+logger = logging.getLogger(__name__)
 
 async def main_task(client: AsyncClient, config: Config):
     signers = utils.load_signers(config.signers)
@@ -15,7 +18,7 @@ async def main_task(client: AsyncClient, config: Config):
     last = False
     while True:
         for signer, metadata in metadata_mapping.items():
-            print(f"Processing signer: {signer.pubkey()}")
+            logging.info(f"Processing signer: {signer.pubkey()}")
             if len(metadata) > min_len and last:
                 token_metadata = metadata[-1]
             elif len(metadata) == min_len and last:
@@ -23,7 +26,7 @@ async def main_task(client: AsyncClient, config: Config):
                 token_metadata = metadata[i]
             else:
                 token_metadata = metadata[i]
-            print(f"Processing token: {token_metadata['name']}")
+            logging.info(f"Processing token: {token_metadata['name']}")
             params = CreateTxParams(
                     unit_limit=250_123,
                     unit_price=config.unit_price,
@@ -35,7 +38,7 @@ async def main_task(client: AsyncClient, config: Config):
             tx = await full_create_transaction(client, signer, params)
             response = await client.send_transaction(tx)
             tx_hash = response.value
-            print(f"Transaction sent: {tx_hash}")
+            logging.info(f"Transaction sent: {tx_hash}")
             await tx_queue.put(tx_hash)
         i += 1
         if i >= min_len:
@@ -53,12 +56,12 @@ async def listen_for_transactions_task(client: AsyncClient):
                 if res is None:
                     continue
                 if res.err:
-                    print(f"Transaction {tx_hash} failed with error: {res.err}")
+                    logging.error(f"Transaction {tx_hash} failed with error: {res.err}")
                 else:
-                    print(f"Transaction {tx_hash} finished")
+                    logging.info(f"Transaction {tx_hash} finished")
             tx_queue.task_done()
         except Exception as e:
-            print(f"Listener error: {e}")
+            logging.error(f"Listener error: {e}")
 
 async def main():
     config = utils.load_config("config.yaml")
@@ -67,10 +70,11 @@ async def main():
     try:
         await asyncio.gather(main_task(client, config), listen_for_transactions_task(client))
     except KeyboardInterrupt:
-        print("\nCTRL+C signal received. Exiting...")
+        logging.info("\nCTRL+C signal received. Exiting...")
     finally:
         await client.close()
 
 if __name__ == "__main__":
     print(utils.get_startup_logo())
-    # asyncio.run(main())
+    setup_logging()
+    asyncio.run(main())
